@@ -33,6 +33,9 @@ export const startStatus: RetryStatus = {
  * at zero and increase by one on each retry. A *undefined* return value from
  * the function implies we have reached the retry limit.
  */
+
+// NOTE: This is essentially a function type. It's not callable; it's just a contract that defines the expected shape of an object.
+
 export interface RetryPolicy {
   (status: RetryStatus): number | undefined
 }

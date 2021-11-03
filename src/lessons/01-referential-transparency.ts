@@ -2,7 +2,11 @@
 // 1. Referential Transparency
 // 2. Composition as a universal design pattern.
 
+//////////////////////////////
+//
 // REFERENTIAL TRANSPARENCY
+//
+//////////////////////////////
 
 // Def: An expression is referentially transparent if it can be replaced with its corresponding value without changing the program's behaviour.
 
