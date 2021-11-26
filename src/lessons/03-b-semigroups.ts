@@ -23,20 +23,30 @@ interface Semigroup<A> extends Magma<A> {}
 
 import * as Se from 'fp-ts/Semigroup'
 
-const Semigroup = <Se.Semigroup<ReadonlyArray<string>>>{
+const Semigroup: Se.Semigroup<ReadonlyArray<string>> = {
   concat: (first, second) => first.concat(second)
 }
 
 // concat can have differing meanings: sum, fusion, combination, substitution, merging etc.
 
 // Implementation of the semigroup (number, +) where + is number addition
-const SemigroupSum = <Se.Semigroup<number>>{
+const SemigroupSum: Se.Semigroup<number> = {
   concat: (first, second) => first + second
 }
 
 // Implementation of the semigroup (number, *) where * is number multiplication
-const SemigroupProduct = <Se.Semigroup<number>>{
+const SemigroupProduct: Se.Semigroup<number> = {
   concat: (first, second) => first * second
+}
+
+// Two instances of Semigroup<boolean>
+
+const SemigroupAll: Se.Semigroup<boolean> = {
+  concat: (first, second) => first && second
+}
+
+const SemigroupAny: Se.Semigroup<boolean> = {
+  concat: (first, second) => first || second
 }
 
 // Note: don't think of "semigroups of numbers" etc., because there are multiple semigroups for the type number, given the different associtative operations available. Also, it is possible for semigroups to share operations but differ in type.
@@ -46,3 +56,102 @@ const SemigroupProduct = <Se.Semigroup<number>>{
 // concatAll
 //
 //////////////////////
+
+// Concat combines two elements of type A. concatAll may be used to combine any number of elements. It takes:
+
+// 1. An instance of a semigroup
+// 2. An initial value
+// 3. An array of elements
+
+import { number as N, boolean as B, struct as Struct } from 'fp-ts'
+
+const sum = Se.concatAll(N.SemigroupSum)(2)
+
+console.log(sum([3, 4, 1, 2])) // => 12
+
+const product = Se.concatAll(N.SemigroupProduct)(3)
+
+console.log(product([2, 4, 3])) // => 72
+
+// Applications - some fns from the standard JS library
+
+const every = <A>(predicate: (a: A) => boolean) => (
+  as: ReadonlyArray<A>
+): boolean => Se.concatAll(B.SemigroupAll)(true)(as.map(predicate))
+
+const some = <A>(predicate: (a: A) => boolean) => (
+  as: ReadonlyArray<A>
+): boolean => Se.concatAll(B.SemigroupAny)(false)(as.map(predicate))
+
+const assign: (as: ReadonlyArray<object>) => object = Se.concatAll(
+  Struct.getAssignSemigroup<object>()
+)({})
+
+//////////////////////
+//
+// Dual Semigroups
+//
+//////////////////////
+
+// Given a semigroup instance, you can obtain a new instance by swapping the order in which the operands are combined within the concat fn
+
+import { pipe } from 'fp-ts/function'
+import { string as S } from 'fp-ts'
+
+const reverse = <A>(S: Semigroup<A>): Semigroup<A> => ({
+  concat: (first, second) => S.concat(second, first)
+})
+
+pipe(S.Semigroup.concat('a', 'b'), console.log) // => 'ab'
+pipe(reverse(S.Semigroup).concat('a', 'b'), console.log) // => 'ba'
+
+// Commutativity
+
+// A binary operation is commutative if changing the order of operands doesn't change the result.
+
+// In the above example of a Semigroup combinator, the concat function is not commutative (and in general, concat functions are not)
+// An example of a commutative concat function might be a (first: boolean, second: boolean) => first && second;
+
+//////////////////////
+//
+// Semigroup Product
+//
+//////////////////////
+
+// Semigroups instances for more complex types can be achieved manually or with helper combinators from the fp-ts library
+
+type Vector = {
+  readonly x: number
+  readonly y: number
+}
+
+// Models a sum of two vectors (manually)
+
+const SemigroupVector: Semigroup<Vector> = {
+  concat: (first, second) => ({
+    x: N.SemigroupSum.concat(first.x, first.y),
+    y: N.SemigroupSum.concat(second.x, second.y)
+  })
+}
+
+// With the struct combinator
+
+import { struct, tuple } from 'fp-ts/Semigroup'
+
+const SemigroupVector2: Semigroup<Vector> = struct({
+  x: N.SemigroupSum,
+  y: N.SemigroupSum
+})
+
+// Vectors can be expressed as tuples, and combined with the combinator tuple
+
+type VectorTuple = readonly [number, number]
+const SemigroupVector3: Semigroup<VectorTuple> = tuple(
+  N.SemigroupSum,
+  N.SemigroupSum
+)
+
+const v1: VectorTuple = [1, 3]
+const v2: VectorTuple = [3, 1]
+
+console.log(SemigroupVector3.concat(v1, v2)) // => [4, 4]
