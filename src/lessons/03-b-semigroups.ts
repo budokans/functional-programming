@@ -63,7 +63,12 @@ const SemigroupAny: Se.Semigroup<boolean> = {
 // 2. An initial value
 // 3. An array of elements
 
-import { number as N, boolean as B, struct as Struct } from 'fp-ts'
+import {
+  number as N,
+  boolean as B,
+  struct as Struct,
+  readonlyNonEmptyArray
+} from 'fp-ts'
 
 const sum = Se.concatAll(N.SemigroupSum)(2)
 
@@ -125,14 +130,19 @@ type Vector = {
   readonly y: number
 }
 
+const v1: Vector = { x: 1, y: 1 }
+const v2: Vector = { x: 1, y: 2 }
+
 // Models a sum of two vectors (manually)
 
 const SemigroupVector: Semigroup<Vector> = {
   concat: (first, second) => ({
-    x: N.SemigroupSum.concat(first.x, first.y),
+    x: N.SemigroupSum.concat(first.x, second.x),
     y: N.SemigroupSum.concat(second.x, second.y)
   })
 }
+
+console.log(SemigroupVector.concat(v1, v2))
 
 // With the struct combinator
 
@@ -151,7 +161,53 @@ const SemigroupVector3: Semigroup<VectorTuple> = tuple(
   N.SemigroupSum
 )
 
-const v1: VectorTuple = [1, 3]
-const v2: VectorTuple = [3, 1]
+const v3: VectorTuple = [1, 3]
+const v4: VectorTuple = [3, 1]
 
-console.log(SemigroupVector3.concat(v1, v2)) // => [4, 4]
+console.log(SemigroupVector3.concat(v3, v4)) // => [4, 4]
+
+//////////////////////
+//
+// Finding a Semigroup instance for any type
+//
+//////////////////////
+
+// Sometimes it's unclear about whether merging or taking a selection of pieces of the same data type will be associative.
+// You can always define a Semigroup instance not for type A itself but for NonEmptyArray<A>.
+
+// This is called a Free Semigroup of A.
+
+// type ReadonlyNonEmptyArray<A> = ReadonlyArray<A> & {
+//   readonly 0: A
+// }
+
+// The concatentation of two NonEmptyArrays is still a NonEmptyArray
+
+// const getSemigroup = <A>(): Se.Semigroup<ReadonlyNonEmptyArray<A>> => ({
+//   concat: (first, second) => [first[0], ...first.slice(1), ...second]
+// })
+
+// Then map the contents of A to singletons (ReadonlyNonEmptyArrays<A> containing a single element).
+
+// const of = <A>(a: A): ReadonlyNonEmptyArray<A> => [a];
+
+// Applying this to a User type
+
+import {
+  getSemigroup,
+  of,
+  ReadonlyNonEmptyArray
+} from 'fp-ts/ReadonlyNonEmptyArray'
+
+type User = {
+  readonly id: number
+  readonly name: string
+}
+
+// This is a Semigroup instance of ReadonlyNonEmptyArray<User>, not User itself
+
+const FSUser: Semigroup<ReadonlyNonEmptyArray<User>> = getSemigroup<User>()
+
+declare const user1: User
+declare const user2: User
+declare const user3: User

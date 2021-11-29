@@ -58,13 +58,16 @@ var reverse = function (S) { return ({
 }); };
 (0, function_1.pipe)(fp_ts_2.string.Semigroup.concat('a', 'b'), console.log); // => 'ab'
 (0, function_1.pipe)(reverse(fp_ts_2.string.Semigroup).concat('a', 'b'), console.log); // => 'ba'
+var v1 = { x: 1, y: 1 };
+var v2 = { x: 1, y: 2 };
 // Models a sum of two vectors (manually)
 var SemigroupVector = {
     concat: function (first, second) { return ({
-        x: fp_ts_1.number.SemigroupSum.concat(first.x, first.y),
-        y: fp_ts_1.number.SemigroupSum.concat(second.x, second.y)
+        x: first.x + first.y,
+        y: second.x + second.y
     }); }
 };
+console.log(SemigroupVector.concat(v1, v2));
 // With the struct combinator
 var Semigroup_1 = require("fp-ts/Semigroup");
 var SemigroupVector2 = (0, Semigroup_1.struct)({
@@ -72,6 +75,6 @@ var SemigroupVector2 = (0, Semigroup_1.struct)({
     y: fp_ts_1.number.SemigroupSum
 });
 var SemigroupVector3 = (0, Semigroup_1.tuple)(fp_ts_1.number.SemigroupSum, fp_ts_1.number.SemigroupSum);
-var v1 = [1, 3];
-var v2 = [3, 1];
-console.log(SemigroupVector3.concat(v1, v2)); // => [4, 4]
+var v3 = [1, 3];
+var v4 = [3, 1];
+console.log(SemigroupVector3.concat(v3, v4)); // => [4, 4]
