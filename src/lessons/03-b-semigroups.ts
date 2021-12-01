@@ -63,12 +63,7 @@ const SemigroupAny: Se.Semigroup<boolean> = {
 // 2. An initial value
 // 3. An array of elements
 
-import {
-  number as N,
-  boolean as B,
-  struct as Struct,
-  readonlyNonEmptyArray
-} from 'fp-ts'
+import { number as N, boolean as B, struct as Struct } from 'fp-ts'
 
 const sum = Se.concatAll(N.SemigroupSum)(2)
 
@@ -211,3 +206,38 @@ const FSUser: Semigroup<ReadonlyNonEmptyArray<User>> = getSemigroup<User>()
 declare const user1: User
 declare const user2: User
 declare const user3: User
+
+// The merge/concat operation can now be achieved by passing singletons of A
+
+const merge: ReadonlyNonEmptyArray<User> = FSUser.concat(
+  FSUser.concat(of(user1), of(user2)),
+  of(user3)
+)
+
+// So, the free semigroup of A is just another semigroup whose elements are all possible, non-empty, finite sequences of A.
+
+// The free semigroup of A can be seen as a lazy way to concat elements of type A while preserving their data content. The value of merge tells us which elements to concatenate and which order they're in.
+
+//////////////////////
+//
+// Order-derivable Semigroups
+//
+//////////////////////
+
+// number is a total order.
+// For total orders, given any x and y, the following law must hold true:
+
+// x <= y or y <= x
+
+// We can thus define another two Semigroup<number> instances using the min and max operations.
+
+const SemigroupMin: Se.Semigroup<number> = {
+  concat: (first, second) => Math.min(first, second)
+}
+
+const SemigroupMax: Se.Semigroup<number> = {
+  concat: (first, second) => Math.max(first, second)
+}
+
+// The total ordering of number is important here, because the concatentation operation is closed on number.
+// To define such semigroups for other data types, equality must be considered

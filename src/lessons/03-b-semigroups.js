@@ -63,8 +63,8 @@ var v2 = { x: 1, y: 2 };
 // Models a sum of two vectors (manually)
 var SemigroupVector = {
     concat: function (first, second) { return ({
-        x: first.x + first.y,
-        y: second.x + second.y
+        x: fp_ts_1.number.SemigroupSum.concat(first.x, second.x),
+        y: fp_ts_1.number.SemigroupSum.concat(second.x, second.y)
     }); }
 };
 console.log(SemigroupVector.concat(v1, v2));
@@ -78,3 +78,32 @@ var SemigroupVector3 = (0, Semigroup_1.tuple)(fp_ts_1.number.SemigroupSum, fp_ts
 var v3 = [1, 3];
 var v4 = [3, 1];
 console.log(SemigroupVector3.concat(v3, v4)); // => [4, 4]
+//////////////////////
+//
+// Finding a Semigroup instance for any type
+//
+//////////////////////
+// Sometimes it's unclear about whether merging or taking a selection of pieces of the same data type will be associative.
+// You can always define a Semigroup instance not for type A itself but for NonEmptyArray<A>.
+// This is called a Free Semigroup of A.
+// type ReadonlyNonEmptyArray<A> = ReadonlyArray<A> & {
+//   readonly 0: A
+// }
+// The concatentation of two NonEmptyArrays is still a NonEmptyArray
+// const getSemigroup = <A>(): Se.Semigroup<ReadonlyNonEmptyArray<A>> => ({
+//   concat: (first, second) => [first[0], ...first.slice(1), ...second]
+// })
+// Then map the contents of A to singletons (ReadonlyNonEmptyArrays<A> containing a single element).
+// const of = <A>(a: A): ReadonlyNonEmptyArray<A> => [a];
+// Applying this to a User type
+var ReadonlyNonEmptyArray_1 = require("fp-ts/ReadonlyNonEmptyArray");
+// This is a Semigroup instance of ReadonlyNonEmptyArray<User>, not User itself
+var FSUser = (0, ReadonlyNonEmptyArray_1.getSemigroup)();
+var user1 = { id: 1, name: 'Steven' };
+var user2 = { id: 2, name: 'Sam' };
+var user3 = { id: 3, name: 'Suyin' };
+// The merge/concat operation can now be achieved by passing singletons of A
+var merge = FSUser.concat(FSUser.concat((0, ReadonlyNonEmptyArray_1.of)(user1), (0, ReadonlyNonEmptyArray_1.of)(user2)), (0, ReadonlyNonEmptyArray_1.of)(user3));
+console.log(merge);
+// So, the free semigroup of A is just another semigroup whose elements are all possible, non-empty, finite sequences of A.
+// The free semigroup of A can be seen as a lazy way to concat elements of type A while preserving their data content.
