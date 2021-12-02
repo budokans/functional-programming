@@ -61,10 +61,64 @@ const search: Point = { x: 1, y: 1 }
 console.log(points.includes(search)) // => false :-(
 pipe(points, elem(EqPoint)(search), console.log) // => true! :-)
 
-// Array.includes doesn't test for deep equality.
+// Array.includes compares objects by identity, not the data they hold (pass by reference)
 
 // The data type Set suffers the same issue, i.e. it doesn't offer handy APIs for testing user-defined equality.
 
 const pointsSet: Set<Point> = new Set([{ x: 0, y: 0 }])
 pointsSet.add({ x: 0, y: 0 })
 console.log(pointsSet) // => Set(2) { { x: 0, y: 0 }, { x: 0, y: 0 } }
+
+// In order to check for equality in these cases, we must provide our own equality-testing API.
+// Steps below
+
+// Firstly, rather than all of the boilerplate of EqPoint, we can use the struct combinator to return an Eq instance with an appropriate equals method.
+
+import { struct } from 'fp-ts/Eq'
+
+const EqPoint2: Eq<Point> = struct({
+  x: N.Eq,
+  y: N.Eq
+})
+
+// As with Semigroups, we can also work with tuples
+
+import { tuple } from 'fp-ts/Eq'
+
+type PointTuple = [number, number]
+const EqPointTuple: Eq<PointTuple> = tuple(N.Eq, N.Eq)
+
+// We can also derive an Eq instance for ReadonlyArrays
+
+import * as A from 'fp-ts/ReadonlyArray'
+
+const EqPointA: Eq<ReadonlyArray<PointTuple>> = A.getEq(EqPointTuple)
+
+// Importantly, it's possible to define multiple Eq instances for a given data type, cf. Haskell, which only allows one.
+
+// The equality of, e.g., a User type, may differ depending on context. E.g. sometimes it might be necessary to define a standard Eq to check identicality, and another to check if only the ID property is the same.
+
+import * as S from 'fp-ts/string'
+
+type User = {
+  readonly id: number
+  readonly name: string
+}
+
+const EqStandard: Eq<User> = struct({
+  id: N.Eq,
+  name: S.Eq
+})
+
+// const EqId: Eq<User> = {
+//   equals: (first, second) => N.Eq.equals(first.id, second.id)
+// }
+
+// Or, rather manually defining EqId, we could use the combinator contramap
+// Given an instance Eq<A> and a function from B to A, we can derive an Eq<B>
+
+// import { contramap } from "fp-ts/Eq"
+
+// const EqId: Eq<User> = pipe(
+
+// )
