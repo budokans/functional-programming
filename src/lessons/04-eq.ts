@@ -117,8 +117,23 @@ const EqStandard: Eq<User> = struct({
 // Or, rather manually defining EqId, we could use the combinator contramap
 // Given an instance Eq<A> and a function from B to A, we can derive an Eq<B>
 
-// import { contramap } from "fp-ts/Eq"
+import { contramap } from 'fp-ts/Eq'
 
-// const EqId: Eq<User> = pipe(
+const EqId: Eq<User> = pipe(
+  N.Eq,
+  contramap((user: User) => user.id)
+)
 
-// )
+console.log(
+  EqStandard.equals(
+    { id: 1, name: 'Steven' },
+    { id: 1, name: 'Steven Webster' }
+  )
+)
+// => false - names are different.
+
+console.log(EqId.equals({ id: 1, name: 'Steven' }, { id: 1, name: 'Julia' }))
+// => true
+
+console.log(EqId.equals({ id: 1, name: 'Giulio' }, { id: 2, name: 'Giulio' }))
+// => false
