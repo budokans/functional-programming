@@ -94,3 +94,20 @@ console.log(concatAll(S.Monoid)(['The', 'Hamptons', 'sucks'])) // => 'TheHampton
 // Why is the initial value not needed anymore?
 
 // Product Monoid
+// Like with Semigroups, it's possible to define a monoid instance for a struct if we can defined a monoid instance for each of its fields. Similar to the struct combinator, tuple works with tuples.
+
+import { struct, tuple } from 'fp-ts/Monoid'
+
+type Point = {
+  readonly x: number
+  readonly y: number
+}
+
+const Monoid: Monoid<Point> = struct({
+  x: N.MonoidSum,
+  y: N.MonoidSum
+})
+
+type PointTuple = readonly [number, number]
+
+const MondoidTuple: Monoid<PointTuple> = tuple(N.MonoidSum, N.MonoidSum)
