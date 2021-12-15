@@ -4,8 +4,6 @@
 ///
 //////////////////
 
-import { getIntercalateSemigroup } from 'fp-ts/lib/Semigroup'
-
 // If X and Y are sets, then X x Y is their cartesian product. Meaning that:
 // X x Y = { (x, y) | x ∈ X, y ∈ Y }
 
