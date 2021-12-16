@@ -1,5 +1,6 @@
 // Algebraic Data Types are one way to define an application or feature's domain model in TypeScript.
 // Definition: A composite type formed by combining other types.
+// Better Definition: A type that specifies a sum of one or more alternatives, where each alternative is a product of zero or more fields.
 
 // Two common families:
 
