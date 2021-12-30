@@ -5,7 +5,10 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "lib": ["dom"],
+    "lib": [
+      "dom",
+      "ES2020"
+    ],
     "sourceMap": false,
     "declaration": true,
     "strict": true,
@@ -17,5 +20,9 @@
     "stripInternal": true,
     "jsx": "react"
   },
-  "include": ["./src", "./dev"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.json"
+  ],
 }

@@ -1,5 +1,5 @@
 "use strict";
-// Note: In TS, these are called discriminated unions.
+// Note: In TS, these are called discriminated unions (but they're not quite the same because TS discriminated unions don't necessarily need to be disjoint).
 exports.__esModule = true;
 exports.cons = exports.nil = exports.del = exports.update = exports.add = void 0;
 var add = function (text) { return ({
@@ -44,3 +44,11 @@ console.log(isEmpty({ _tag: 'Cons', head: 'foo', tail: { _tag: 'Nil' } })); // =
 var head = match(function () { return undefined; }, function (head, _) { return head; });
 console.log(head({ _tag: 'Nil' })); // => undefined
 console.log(head({ _tag: 'Cons', head: 'foo', tail: { _tag: 'Nil' } })); // => 'foo'
+// returns the length of the List, recursively
+var length = match(function () { return 0; }, function (_, tail) { return 1 + length(tail); });
+console.log(length({ _tag: 'Nil' })); // => 0
+console.log(length({
+    _tag: 'Cons',
+    head: 'foo',
+    tail: { _tag: 'Cons', head: 'bar', tail: { _tag: 'Nil' } }
+})); // => 2
