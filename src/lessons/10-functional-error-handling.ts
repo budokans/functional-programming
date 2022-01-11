@@ -175,7 +175,7 @@ console.log(EqOptionMyTuple.equals(o3, o5)) // => false
 
 // Slightly modifying the imports above, we can obtain an Ord instance for Option<A>
 
-import { getOrd } from 'fp-ts/Option'
+import { getOrd, isNone } from 'fp-ts/Option'
 import { tuple as tupleOrd } from 'fp-ts/Ord'
 
 const OrdMyTuple = tupleOrd<MyTuple>(S.Ord, N.Ord)
@@ -203,3 +203,129 @@ console.log(OrdOptionMyTuple.compare(o6, o8)) // => -1
 // 4. x = some(a), y = some(b), concat(x, y) = ?
 
 // To solve 4., just provide a Semigroup instance for A and then derive a Semigroup instance for Option<A>.
+
+// It's also possible to define a Monoid instance for Option<A> that behaves like:
+// 1. x = none, y = none, concat(x, y) = none
+// 2. x = some(a1), y = none, concat(x, y) = some(a1)
+// 3. x = none, y = some(a2), concat(x, y) = some(a2)
+// 4. x = some(a1), y = some(a2), concat(x, y) = some(S.concat(a1, a2))
+
+// To achieve this, use the getMonoid() combinator for a given Semigroup instance.
+
+// 2 more useful Monoids
+
+// 1. Returning the left-most non-None value
+
+// 1. x = none, y = none, concat(x, y) = none
+// 2. x = some(a1), y = none, concat(x, y) = some(a1)
+// 3. x = none, y = some(a2), concat(x, y) = some(a2)
+// 4. x = some(a1), y = some(a2), concat(x, y) = some(a1)
+
+import { monoid as M } from 'fp-ts'
+import { getMonoid } from 'fp-ts/Option'
+import { first, last } from 'fp-ts/Semigroup'
+
+const getFirstMonoid = <A = never>(): M.Monoid<Option<A>> => getMonoid(first())
+
+// and 2. Its dual (Monoid returning the right-most non-None value)
+
+// 1. x = none, y = none, concat(x, y) = none
+// 2. x = some(a1), y = none, concat(x, y) = some(a1)
+// 3. x = none, y = some(a2), concat(x, y) = some(a2)
+// 4. x = some(a1), y = some(a2), concat(x, y) = some(a2)
+
+const getLastMonoid = <A = never>(): M.Monoid<Option<A>> => getMonoid(last())
+
+// getLastMonoid can be useful to handle optional values.
+
+import { struct } from 'fp-ts/Monoid'
+
+/** VSCode settings */
+interface Settings {
+  /** Controls the font family */
+  readonly fontFamily: Option<string>
+  /** Controls the font size in pixels */
+  readonly fontSize: Option<number>
+  /** Limit the width of the minimap to render at most a certain number of columns. */
+  readonly maxColumn: Option<number>
+}
+
+const monoidSettings: M.Monoid<Settings> = struct({
+  fontFamily: getMonoid(last()),
+  fontSize: getMonoid(last()),
+  maxColumn: getMonoid(last())
+})
+
+const workspaceSettings: Settings = {
+  fontFamily: some('Courier'),
+  fontSize: none,
+  maxColumn: some(80)
+}
+
+const userSettings: Settings = {
+  fontFamily: some('Fira Code'),
+  fontSize: some(12),
+  maxColumn: none
+}
+
+// userSettings overrides workspaceSettings as it is in the 'a2' position, i.e. last, and monoidSettings derives a monoid whose concat function returns the 'last'.
+
+console.log(monoidSettings.concat(workspaceSettings, userSettings))
+
+//////////////////
+///
+/// The Either type
+///
+//////////////////
+
+// Options are useful to handle the results of partial functions, but the None type gives us no information on why the computation failed.
+
+// Enter: Either.
+
+// represents a failure
+interface Left<E> {
+  readonly _tag: 'Left'
+  readonly left: E
+}
+
+// represents a success
+interface Right<A> {
+  readonly _tag: 'Right'
+  readonly right: A
+}
+
+type Either<E, A> = Left<E> | Right<A>
+
+const left = <E, A>(left: E): Either<E, A> => ({ _tag: 'Left', left })
+
+const right = <A, E>(right: A): Either<E, A> => ({ _tag: 'Right', right })
+
+const foldEither = <E, R, A>(
+  onLeft: (left: E) => R,
+  onRight: (right: A) => R
+) => (fa: Either<E, A>) => {
+  switch (fa._tag) {
+    case 'Left':
+      return onLeft(fa.left)
+    case 'Right':
+      return onRight(fa.right)
+  }
+}
+
+// Using the Either type in the node callback example (Either is a sum type that is great for error handling)
+
+declare const readFile: (
+  path: string,
+  callback: (result: Either<Error, string>) => void
+) => void
+
+readFile('./somePath', (e) =>
+  pipe(
+    e,
+    foldEither(
+      (err) => `Error: ${err.message}`,
+      (data) => `Data: ${data.trim()}`
+    ),
+    console.log
+  )
+)
