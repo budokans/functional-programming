@@ -231,3 +231,48 @@ const liftA3 = <B, C, D, E>(g: (b: B) => (c: C) => (d: D) => E) => (
 // pure           pure                 g ∘ f
 // effectful      pure (unary)         map(g) ∘ f
 // effectful      pure (n-ary, n > 1)  liftAn(g) ∘ f
+
+//////////////////
+///
+/// The of operation
+///
+//////////////////
+
+// Now we know that given two functions f: (a: A) => B and g: (b: B, c: C) => D we can obtain the composition:
+
+// h: (a: A) => (fb: F<B>) => F<D>
+
+// But what do we do if we only have a B and need an F<B>?
+
+// of: <B>(b: B) => F<B>
+
+// Applicative functors are pointed functors: type constructors that admit an of (as well as an ap)
+
+const ofREA = <A>(a: A): ReadonlyArray<A> => [a]
+const ofO = <A>(a: A): O.Option<A> => O.some(a)
+const ofIO = <A>(a: A): IO.IO<A> => () => a
+const ofT = <A>(a: A): T.Task<A> => () => Promise.resolve(a)
+const ofR = <R, A>(a: A): R.Reader<R, A> => () => a
+
+//////////////////
+///
+/// Applicative functors compose
+///
+//////////////////
+
+// This means that given two applicative functors F and G, their composition F<G<A>> is still an applicative functor.
+// The of of the composition is the composition of the of.
+
+type TaskOption<A> = T.Task<O.Option<A>>
+
+const ofTO: <A>(a: A) => TaskOption<A> = F.flow(O.of, T.of)
+
+const apTO = <A>(
+  fa: TaskOption<A>
+): (<B>(fab: TaskOption<(a: A) => B>) => TaskOption<B>) =>
+  F.flow(
+    T.map((gab) => (ga: O.Option<A>) => O.ap(ga)(gab)),
+    T.ap(fa)
+  )
+
+// Applicatives don't, solve problems that arise when BOTH programs are effectful. For that, we need monads.
