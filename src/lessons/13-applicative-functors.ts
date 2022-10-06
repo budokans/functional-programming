@@ -53,7 +53,7 @@ declare const fetchUser: (id: number) => T.Task<User>
 const userId = 1
 const followerId = 3
 
-const result = addFollowerC(fetchUser(userId))(fetchUser(followerId)) // does not compile as fetchUser returns a Task.
+// const result = addFollowerC(fetchUser(userId))(fetchUser(followerId)) // does not compile as fetchUser returns a Task.
 
 // If only we had a function like:
 
@@ -275,4 +275,9 @@ const apTO = <A>(
     T.ap(fa)
   )
 
-// Applicatives don't, solve problems that arise when BOTH programs are effectful. For that, we need monads.
+// Applicatives don't solve problems that arise when BOTH programs are effectful, e.g.
+
+// f: (a: A) => F<B>
+// g: (b: B) => F<C>
+
+// For that, we need monads
